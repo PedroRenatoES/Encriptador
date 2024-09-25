@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codificador y Decodificador de Letras</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 10px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        p#result {
+            font-size: 16px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Codificador y Decodificador de Letras</h1>
+       
+        <div class="input-group">
+            <input type="text" id="text" placeholder="Ingresa el texto">
+            <input type="file" id="fileInput" accept=".txt">
+        </div>
+       
+        <label for="bits">Tamaño en bits:</label>
+        <select id="bits">
+            <option value="2">2 bits</option>
+            <option value="4">4 bits</option>
+            <option value="8">8 bits</option>
+            <option value="16">16 bits</option>
+            <option value="32">32 bits</option>
+            <option value="Ascii">Ascii</option>
+        </select>
+       
+        <button onclick="encodeText()">Codificar</button>
+        <button onclick="decodeText()">Decodificar</button>
+        <button onclick="createTextFile()">Descargar Texto</button>
+
+        
+       
+        <h2>Resultado:</h2>
+        <p id="result" style="word-wrap: break-word;"></p>
+    </div>
+    
+    
+    <script>
+        
+        const tables = {
+            2: {
+                'a': 'cc', 'b': 'ko', 'c': 'ef', 'd': 'ee',
+                'e': 'xc', 'f': 'ki', 'g': 'tr', 'h': 'fe',
+                'i': 'mn', 'j': 'op', 'k': 'gh', 'l': 're',
+                'm': 'nm', 'n': 'pi', 'o': 'al', 'p': 'de',
+                'q': 'uq', 'r': 'pe', 's': 'ws', 't': 'hj',
+                'u': 'qe', 'v': 'pa', 'w': 'lo', 'x': 'xe',
+                'y': 'qa', 'z': 'po', ' ': 'ep',
+            },
+            4: {
+                'a': 'ccko', 'b': 'kocc', 'c': 'cghm', 'd': 'plim',
+                'e': 'xcki', 'f': 'srft', 'g': 'hmkl', 'h': 'iatr',
+                'i': 'mnop', 'j': 'jqls', 'k': 'hntm', 'l': 'tecn',
+                'm': 'uqpe', 'n': 'nooo', 'o': 'opls', 'p': 'piro',
+                'q': 'qepa', 'r': 'rsss', 's': 'amoa', 't': 'lina',
+                'u': 'qapo', 'v': 'pque', 'w': 'redp', 'x': 'esot',
+                'y': 'popa', 'z': 'poqa', ' ': 'espc'
+            },
+            8: {
+                'a': 'A1B2C3D4', 'b': 'E5F6G7H8', 'c': 'I9J0K1L2', 'd': 'M3N4O5P6',
+                'e': 'Q7R8S9T0', 'f': 'U1V2W3X4', 'g': 'Y5Z6A7B8', 'h': 'C9D0E1F2',
+                'i': 'G3H4I5J6', 'j': 'K7L8M9N0', 'k': 'O1P2Q3R4', 'l': 'S5T6U7V8',
+                'm': 'W9X0Y1Z2', 'n': 'A3B4C5D6', 'o': 'E7F8G9H0', 'p': 'I1J2K3L4',
+                'q': 'M5N6O7P8', 'r': 'Q9R0S1T2', 's': 'U3V4W5X6', 't': 'Y7Z8A9B0',
+                'u': 'C1D2E3F4', 'v': 'G5H6I7J8', 'w': 'K9L0M1N2', 'x': 'O3P4Q5R6',
+                'y': 'S7T8U9V0', 'z': 'W1X2Y3Z4', ' ': '3SP4C3FG'
+            },
+            16: {
+                'a': 'A1B2C3D4E5F6G7H8', 'b': 'I9J0K1L2M3N4O5P6', 'c': 'Q7R8S9T0U1V2W3X4', 'd': 'Y5Z6A7B8C9D0E1F2',
+                'e': 'G3H4I5J6K7L8M9N0', 'f': 'O1P2Q3R4S5T6U7V8', 'g': 'W9X0Y1Z2A3B4C5D6', 'h': 'E7F8G9H0I1J2K3L4',
+                'i': 'M5N6O7P8Q9R0S1T2', 'j': 'U3V4W5X6Y7Z8A9B0', 'k': 'C1D2E3F4G5H6I7J8', 'l': 'K9L0M1N2O3P4Q5R6',
+                'm': 'S7T8U9V0W1X2Y3Z4', 'n': 'A5B6C7D8E9F0G1H2', 'o': 'I3J4K5L6M7N8O9P0', 'p': 'Q1R2S3T4U5V6W7X8',
+                'q': 'Y9Z0A1B2C3D4E5F6', 'r': 'G7H8I9J0K1L2M3N4', 's': 'O5P6Q7R8S9T0U1V2', 't': 'W3X4Y5Z6A7B8C9D0',
+                'u': 'E1F2G3H4I5J6K7L8', 'v': 'M9N0O1P2Q3R4S5T6', 'w': 'U7V8W9X0Y1Z2A3B4', 'x': 'C5D6E7F8G9H0I1J2',
+                'y': 'K3L4M5N6O7P8Q9R0', 'z': 'S1T2U3V4W5X6Y7Z8', ' ': '3SP4C3D4E5F6G7H8'
+            },
+            32: {
+                'a': 'A1B2C3DI9J0K1L2M3N4O5P64E5F6G7H8', 'b': 'I9J0K1Q7R8S9T0U1V2W3X4L2M3N4O5P6', 'c': 'Q7R8S9T0Y5Z6A7B8C9D0E1F2U1V2W3X4', 'd': 'Y5ZG3H4I5J6K7L8M9N06A7B8C9D0E1F2',
+                'e': 'O1P2Q3W9X0Y1Z2A3B4C5D6R4S5T6U7V8', 'f': 'W9X0Y1E7F8G9H0I1J2K3L4Z2A3B4C5D6', 'g': 'M5N6O7G3H4I5J6K7L8M9N0P8Q9R0S1T2', 'h': 'EM5N6O7P8Q9R0S1T27F8G9H0I1J2K3L4',
+                'i': 'M5N6O7P8U3V4W5X6Y7Z8A9B0Q9R0S1T2', 'j': 'U3V4WG7H8I9J0K1L2M3N45X6Y7Z8A9B0', 'k': 'C1D2E3W9X0Y1Z2A3B4C5D6F4G5H6I7J8', 'l': 'K9L0Q1R2S3T4U5V6W7X8M1N2O3P4Q5R6',
+                'm': 'S7T8U9M5N6O7P8Q9R0S1T2V0W1X2Y3Z4', 'n': 'A5BU7V8W9X0Y1Z2A3B46C7D8E9F0G1H2', 'o': 'W3X4Y5ZI3J4K5L6M7N8O9P06A7B8C9D0', 'p': 'C5D6E7FY9Z0A1B2C3D4E5F68G9H0I1J2',
+                'q': 'E1F2G3H4U3V4W5X6Y7Z8A9B0I5J6K7L8', 'r': 'S1T2UK3L4M5N6O7P8Q9R03V4W5X6Y7Z8', 's': 'O5P6QK9L0M1N2O3P4Q5R67R8S9T0U1V2', 't': 'C5O5P6Q7R8S9T0U1V2D6E7F8G9H0I1J2',
+                'u': 'C1D2E3F4GS7T8U9V0W1X2Y3Z45H6I7J8', 'v': 'M9N0O1PO5P6Q7R8S9T0U1V22Q3R4S5T6', 'w': 'W3X4Y5M9N0O1P2Q3R4S5T6Z6A7B8C9D0', 'x': 'C5D6E7F8S1T2U3V4W5X6Y7Z8G9H0I1J2',
+                'y': 'W3X4Y5Z6A7BM9N0O1P2Q3R4S5T68C9D0', 'z': 'E1F2GI9J0K1L2M3N4O5P63H4I5J6K7L8', ' ': 'A3SP4C33SP4C3DI9J0K1L2M3N42GY42S'
+            },
+            Ascii: {
+                "a": '97', "b": '98', "c": '99', "d": '100', "e": '101', "f": '102', "g": '103', "h": '104',
+                "i": '105', "j": '106', "k": '107', "l": '108', "m": '109', "n": '110', "o": '111', "p": '112',
+                "q": '113', "r": '114', "s": '115', "t": '116', "u": '117', "v": '118', "w": '119', "x": '120',
+                "y": '121', "z": '122', " ": '32',
+                "!": '33', "\"": '34', "#": '35', "$": '36', "%": '37', "&": '38', "'": '39', "(": '40',
+                ")": '41', "*": '42', "+": '43', ",": '44', "-": '45', ".": '46', "/": '47', "0": '48',
+                "1": '49', "2": '50', "3": '51', "4": '52', "5": '53', "6": '54', "7": '55', "8": '56',
+                "9": '57', ":": '58', ";": '59', "<": '60', "=": '61', ">": '62', "?": '63', "@": '64',
+                "A": '65', "B": '66', "C": '67', "D": '68', "E": '69', "F": '70', "G": '71', "H": '72',
+                "I": '73', "J": '74', "K": '75', "L": '76', "M": '77', "N": '78', "O": '79', "P": '80',
+                "Q": '81', "R": '82', "S": '83', "T": '84', "U": '85', "V": '86', "W": '87', "X": '88',
+                "Y": '89', "Z": '90', "[": '91', "\\": '92', "]": '93', "^": '94', "_": '95', "`": '96',
+                "{": '123', "|": '124', "}": '125', "~": '126', "\x7F": '127'
+            }
+        };
+ 
+        function encodeText() {
+            const text = document.getElementById('text').value;
+            const bits = document.getElementById('bits').value;
+            const table = tables[bits] || {};
+ 
+            if (bits === 'Ascii') {
+                
+                const encodedText = Array.from(text).map(char => table[char] || char).join(' ');
+                document.getElementById('result').innerText = encodedText;
+            } else {
+                
+                const encodedText = Array.from(text).map(char => table[char] || char).join('');
+                document.getElementById('result').innerText = encodedText;
+            }
+        }
+ 
+        function decodeText() {
+            const text = document.getElementById('text').value;
+            const bits = document.getElementById('bits').value;
+            const table = tables[bits] || {};
+           
+            if (bits === 'Ascii') {
+                
+                const reverseTable = Object.fromEntries(Object.entries(table).map(([key, value]) => [value, key]));
+               
+                
+                const encodedChars = text.split(' ');
+                const decodedText = encodedChars.map(code => reverseTable[code] || code).join('');
+                document.getElementById('result').innerText = decodedText;
+            } else {
+                
+                const reverseTable = Object.fromEntries(Object.entries(table).map(([key, value]) => [value, key]));
+               
+                let decodedText = '';
+                let buffer = '';
+                for (let i = 0; i < text.length; i++) {
+                    buffer += text[i];
+                   
+                    if (Object.keys(reverseTable).includes(buffer)) {
+                        decodedText += reverseTable[buffer];
+                        buffer = '';
+                    }
+                }
+               
+                document.getElementById('result').innerText = decodedText;
+            }
+        }
+
+        function createTextFile() {
+            const result = document.getElementById('result').innerText;
+            const blob = new Blob([result], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'texto_codificado.txt';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('text').value = e.target.result;
+            };
+            reader.readAsText(file);
+        });
+
+    </script>
+</body>
+</html>
